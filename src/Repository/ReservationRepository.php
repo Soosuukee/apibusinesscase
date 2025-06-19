@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Reservation;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -15,6 +16,17 @@ class ReservationRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Reservation::class);
     }
+
+    public function findByOwner(User $owner): array
+    {
+        return $this->createQueryBuilder('r')
+            ->join('r.announcement', 'a')
+            ->andWhere('a.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->getResult();
+    }
+
 
     //    /**
     //     * @return Reservation[] Returns an array of Reservation objects

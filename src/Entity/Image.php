@@ -18,13 +18,17 @@ use Doctrine\ORM\Mapping as ORM;
         new Get(normalizationContext: ['groups' => ['image:read:item']]),
         new Post(
             normalizationContext: ['groups' => ['image:read:item']],
-            denormalizationContext: ['groups' => ['image:write']]
+            denormalizationContext: ['groups' => ['image:write']],
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_OWNER')"
         ),
         new Put(
             normalizationContext: ['groups' => ['image:read:item']],
-            denormalizationContext: ['groups' => ['image:write']]
+            denormalizationContext: ['groups' => ['image:write']],
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_OWNER')"
         ),
-        new Delete()
+        new Delete(
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_OWNER')"
+        )
     ]
 )]
 #[ORM\Entity(repositoryClass: ImageRepository::class)]
@@ -50,15 +54,14 @@ class Image
         return $this->id;
     }
 
-    public function getimageUrl(): ?string
+    public function getImageUrl(): ?string
     {
         return $this->imageUrl;
     }
 
-    public function setimageUrl(string $imageUrl): static
+    public function setImageUrl(string $imageUrl): static
     {
         $this->imageUrl = $imageUrl;
-
         return $this;
     }
 
@@ -70,7 +73,6 @@ class Image
     public function setAnnouncement(?Announcement $announcement): static
     {
         $this->announcement = $announcement;
-
         return $this;
     }
 }

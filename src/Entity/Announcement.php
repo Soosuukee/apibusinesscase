@@ -16,6 +16,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ApiResource(
+    normalizationContext: ['groups' => ['announcement:read']],
+    denormalizationContext: ['groups' => ['announcement:write']],
     operations: [
         new GetCollection(),
         new Get(),
@@ -53,7 +55,7 @@ class Announcement
     #[ORM\Column(length: 255)]
     private ?string $covering_image = null;
 
-    #[ORM\OneToMany(mappedBy: 'announcenement', targetEntity: Message::class)]
+    #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Message::class)]
     private Collection $messages;
 
     #[ORM\Column]
@@ -86,7 +88,7 @@ class Announcement
     private Collection $amenities;
 
     #[ORM\OneToOne(mappedBy: 'announcement', cascade: ['persist', 'remove'])]
-    private ?Reservation $yes = null;
+    private ?Reservation $reservation = null;
 
     #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'announcement', orphanRemoval: true)]
     private Collection $images;
@@ -108,103 +110,163 @@ class Announcement
     {
         return $this->id;
     }
+
     public function getTitle(): ?string
     {
         return $this->title;
     }
+
     public function setTitle(string $title): static
     {
         $this->title = $title;
         return $this;
     }
+
     public function getDescription(): ?string
     {
         return $this->description;
     }
+
     public function setDescription(string $description): static
     {
         $this->description = $description;
         return $this;
     }
+
     public function getPrice(): ?int
     {
         return $this->price;
     }
+
     public function setPrice(int $price): static
     {
         $this->price = $price;
         return $this;
     }
+
     public function getCapacity(): ?int
     {
         return $this->capacity;
     }
+
     public function setCapacity(int $capacity): static
     {
         $this->capacity = $capacity;
         return $this;
     }
+
     public function getCoveringImage(): ?string
     {
         return $this->covering_image;
     }
+
     public function setCoveringImage(string $covering_image): static
     {
         $this->covering_image = $covering_image;
         return $this;
     }
+
     public function getStartAt(): ?\DateTime
     {
         return $this->startAt;
     }
+
     public function setStartAt(\DateTime $startAt): static
     {
         $this->startAt = $startAt;
         return $this;
     }
+
     public function getEndAt(): ?\DateTime
     {
         return $this->endAt;
     }
+
     public function setEndAt(\DateTime $endAt): static
     {
         $this->endAt = $endAt;
         return $this;
     }
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
+
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
         return $this;
     }
+
     public function getStatus(): ?AnnouncementStatus
     {
         return $this->status;
     }
+
     public function setStatus(AnnouncementStatus $status): static
     {
         $this->status = $status;
         return $this;
     }
+
     public function getOwner(): ?User
     {
         return $this->owner;
     }
+
     public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
         return $this;
     }
+
     public function getAddress(): ?Address
     {
         return $this->address;
     }
+
     public function setAddress(?Address $address): static
     {
         $this->address = $address;
+        return $this;
+    }
+
+    public function getReservation(): ?Reservation
+    {
+        return $this->reservation;
+    }
+
+    public function setReservation(Reservation $reservation): static
+    {
+        if ($reservation->getAnnouncement() !== $this) {
+            $reservation->setAnnouncement($this);
+        }
+        $this->reservation = $reservation;
+        return $this;
+    }
+
+    public function getMessages(): Collection
+    {
+        return $this->messages;
+    }
+
+    public function addMessage(Message $message): static
+    {
+        if (!$this->messages->contains($message)) {
+            $this->messages->add($message);
+            $message->setAnnouncement($this);
+        }
+        return $this;
+    }
+
+    public function removeMessage(Message $message): static
+    {
+        if ($this->messages->removeElement($message)) {
+            if ($message->getAnnouncement() === $this) {
+                $message->setAnnouncement(null);
+            }
+        }
         return $this;
     }
 
@@ -212,6 +274,7 @@ class Announcement
     {
         return $this->unavailabilities;
     }
+
     public function addUnavailability(UnavailableTimeSlot $unavailability): static
     {
         if (!$this->unavailabilities->contains($unavailability)) {
@@ -220,6 +283,7 @@ class Announcement
         }
         return $this;
     }
+
     public function removeUnavailability(UnavailableTimeSlot $unavailability): static
     {
         if ($this->unavailabilities->removeElement($unavailability)) {
@@ -234,6 +298,7 @@ class Announcement
     {
         return $this->services;
     }
+
     public function addService(AnnouncementService $service): static
     {
         if (!$this->services->contains($service)) {
@@ -242,6 +307,7 @@ class Announcement
         }
         return $this;
     }
+
     public function removeService(AnnouncementService $service): static
     {
         if ($this->services->removeElement($service)) {
@@ -256,6 +322,7 @@ class Announcement
     {
         return $this->amenities;
     }
+
     public function addAmenity(AnnouncementAmenity $amenity): static
     {
         if (!$this->amenities->contains($amenity)) {
@@ -264,6 +331,7 @@ class Announcement
         }
         return $this;
     }
+
     public function removeAmenity(AnnouncementAmenity $amenity): static
     {
         if ($this->amenities->removeElement($amenity)) {
@@ -274,45 +342,11 @@ class Announcement
         return $this;
     }
 
-    public function getYes(): ?Reservation
-    {
-        return $this->yes;
-    }
-    public function setYes(Reservation $yes): static
-    {
-        if ($yes->getAnnouncement() !== $this) {
-            $yes->setAnnouncement($this);
-        }
-        $this->yes = $yes;
-        return $this;
-    }
-
-    public function getMessages(): Collection
-    {
-        return $this->messages;
-    }
-    public function addMessage(Message $message): static
-    {
-        if (!$this->messages->contains($message)) {
-            $this->messages->add($message);
-            $message->setAnnouncement($this);
-        }
-        return $this;
-    }
-    public function removeMessage(Message $message): static
-    {
-        if ($this->messages->removeElement($message)) {
-            if ($message->getAnnouncement() === $this) {
-                $message->setAnnouncement(null);
-            }
-        }
-        return $this;
-    }
-
     public function getImages(): Collection
     {
         return $this->images;
     }
+
     public function addImage(Image $image): static
     {
         if (!$this->images->contains($image)) {
@@ -321,6 +355,7 @@ class Announcement
         }
         return $this;
     }
+
     public function removeImage(Image $image): static
     {
         if ($this->images->removeElement($image)) {
@@ -335,6 +370,7 @@ class Announcement
     {
         return $this->reviews;
     }
+
     public function addReview(Review $review): static
     {
         if (!$this->reviews->contains($review)) {
@@ -343,6 +379,7 @@ class Announcement
         }
         return $this;
     }
+
     public function removeReview(Review $review): static
     {
         if ($this->reviews->removeElement($review)) {

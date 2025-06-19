@@ -45,6 +45,7 @@ class Amenity
     /**
      * @var Collection<int, AnnouncementAmenity>
      */
+    #[Groups(['amenity:read:item'])]
     #[ORM\OneToMany(mappedBy: 'amenity', targetEntity: AnnouncementAmenity::class, cascade: ['persist'])]
     private Collection $announcementAmenities;
 

@@ -16,7 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ApiResource(
     operations: [
-        new GetCollection(normalizationContext: ['groups' => ['address:read']]),
+        new GetCollection(
+            normalizationContext: ['groups' => ['address:read']],
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER')"
+        ),
         new Get(normalizationContext: ['groups' => ['address:read:item']]),
         new Post(
             normalizationContext: ['groups' => ['address:read:item']],
