@@ -2,325 +2,145 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
 use App\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Address;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Annotation\SerializedName;
-use Symfony\Component\Validator\Constraints as Assert;
-use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[ApiResource(
-    operations: [
-        new GetCollection(
-            normalizationContext: ['groups' => ['user:read']],
-            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER')"
-        ),
-        new Get(
-            normalizationContext: ['groups' => ['user:read:item']],
-            security: "is_granted('ROLE_ADMIN') or object == user"
-        ),
-        new Post(
-            normalizationContext: ['groups' => ['user:read:item']],
-            denormalizationContext: ['groups' => ['user:write']]
-        ),
-        new Put(
-            normalizationContext: ['groups' => ['user:read:item']],
-            denormalizationContext: ['groups' => ['user:write']],
-            security: "is_granted('ROLE_ADMIN') or object == user"
-        ),
-        new Delete(
-            security: "is_granted('ROLE_ADMIN') or object == user"
-        )
-    ]
-)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read', 'user:read:item', 'announcement:read:item', 'reservation:read:item', 'reservation:read'])]
+    #[Groups(['user:read', 'address:admin:read', 'announcement:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'reservation:read:item', 'reservation:read', 'user:admin:read'])]
-    #[Assert\NotBlank]
-    #[Assert\Email]
+    #[Groups(['user:read'])]
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(['user:write'])]
-    #[SerializedName('password')]
-    #[Assert\NotBlank(groups: ['user:write'])]
-    private ?string $password = null;
-
-    #[ORM\Column(length: 50)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'announcement:read', 'reservation:read:item', 'reservation:read'])]
-    private ?string $firstName = null;
-
-    #[ORM\Column(length: 50)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'announcement:read', 'reservation:read:item', 'reservation:read'])]
-    private ?string $lastName = null;
-
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['user:read:item', 'user:write'])]
-    private ?Address $billingAddress = null;
-
-    #[ORM\Column]
-    #[Groups(['user:read:item'])]
-    private ?bool $isVerified = null;
-
-    #[ORM\Column]
-    #[Groups(['user:read:item'])]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['user:read:item', 'user:write'])]
-    private ?\DateTime $birthDate = null;
-
-    #[ORM\Column]
-    #[Groups(['user:read:item', 'user:read'])]
     private array $roles = [];
 
-    #[ORM\OneToOne(mappedBy: 'resident', targetEntity: Address::class, cascade: ['persist', 'remove'])]
+    #[ORM\Column]
+    private ?string $password = null;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(['user:read', 'announcement:read'])]
+    private ?string $firstName = null;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(['user:read', 'announcement:read'])]
+    private ?string $lastName = null;
+
+    #[ORM\ManyToOne(inversedBy: 'residents')]
+    #[Groups(['user:read'])]
     private ?Address $address = null;
-
-    #[Groups(['user:read:item'])]
-    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Announcement::class)]
-    private Collection $announcements;
-
-    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Review::class)]
-    private Collection $reviews;
-
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Reservation::class)]
-    private Collection $reservations;
-
-    /**
-     * @var Collection<int, Dispute>
-     */
-    #[ORM\OneToMany(targetEntity: Dispute::class, mappedBy: 'author')]
-    private Collection $disputes;
-
-    public function __construct()
-    {
-        $this->announcements = new ArrayCollection();
-        $this->reviews = new ArrayCollection();
-        $this->reservations = new ArrayCollection();
-        $this->disputes = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
+
     public function getEmail(): ?string
     {
         return $this->email;
     }
+
     public function setEmail(string $email): static
     {
         $this->email = $email;
         return $this;
     }
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
-    public function setPassword(string $password): static
-    {
-        $this->password = $password;
-        return $this;
-    }
+
+    /**
+     * A visual identifier that represents this user.
+     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
+
     public function getRoles(): array
     {
-        return array_unique([...$this->roles, 'ROLE_USER']);
+        $roles = $this->roles;
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
     }
+
     public function setRoles(array $roles): static
     {
-        $roles[] = 'ROLE_USER';
-        $this->roles = array_unique($roles);
+        $this->roles = $roles;
+
         return $this;
     }
-    public function eraseCredentials(): void {}
+
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+    }
+
     public function getFirstName(): ?string
     {
         return $this->firstName;
     }
+
     public function setFirstName(string $firstName): static
     {
         $this->firstName = $firstName;
+
         return $this;
     }
+
     public function getLastName(): ?string
     {
         return $this->lastName;
     }
+
     public function setLastName(string $lastName): static
     {
         $this->lastName = $lastName;
+
         return $this;
     }
-    public function getBillingAddress(): ?Address
-    {
-        return $this->billingAddress;
-    }
-    public function setBillingAddress(?Address $billingAddress): static
-    {
-        $this->billingAddress = $billingAddress;
-        return $this;
-    }
-    public function isVerified(): ?bool
-    {
-        return $this->isVerified;
-    }
-    public function setIsVerified(bool $isVerified): static
-    {
-        $this->isVerified = $isVerified;
-        return $this;
-    }
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-    public function getBirthDate(): ?\DateTime
-    {
-        return $this->birthDate;
-    }
-    public function setBirthDate(\DateTime $birthDate): static
-    {
-        $this->birthDate = $birthDate;
-        return $this;
-    }
+
     public function getAddress(): ?Address
     {
         return $this->address;
     }
+
     public function setAddress(?Address $address): static
     {
+        // Detach from previous address if needed
+        if ($this->address !== null && $this->address !== $address) {
+            $this->address->removeResident($this);
+        }
+
+        // Assign the new address
         $this->address = $address;
-        if ($address && $address->getResident() !== $this) {
-            $address->setResident($this);
-        }
-        return $this;
-    }
 
-    public function getAnnouncements(): Collection
-    {
-        return $this->announcements;
-    }
-
-    public function addAnnouncement(Announcement $announcement): static
-    {
-        if (!$this->announcements->contains($announcement)) {
-            $this->announcements->add($announcement);
-            $announcement->setOwner($this);
-        }
-
-        return $this;
-    }
-
-    public function removeAnnouncement(Announcement $announcement): static
-    {
-        if ($this->announcements->removeElement($announcement)) {
-            // set the owning side to null (unless already changed)
-            if ($announcement->getOwner() === $this) {
-                $announcement->setOwner(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function getReviews(): Collection
-    {
-        return $this->reviews;
-    }
-
-    public function addReview(Review $review): static
-    {
-        if (!$this->reviews->contains($review)) {
-            $this->reviews->add($review);
-            $review->setAuthor($this);
-        }
-        return $this;
-    }
-
-    public function removeReview(Review $review): static
-    {
-        if ($this->reviews->removeElement($review)) {
-            if ($review->getAuthor() === $this) {
-                $review->setAuthor(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getReservations(): Collection
-    {
-        return $this->reservations;
-    }
-
-    public function addReservation(Reservation $reservation): static
-    {
-        if (!$this->reservations->contains($reservation)) {
-            $this->reservations->add($reservation);
-            $reservation->setClient($this);
-        }
-        return $this;
-    }
-
-    public function removeReservation(Reservation $reservation): static
-    {
-        if ($this->reservations->removeElement($reservation)) {
-            if ($reservation->getClient() === $this) {
-                $reservation->setClient(null);
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Dispute>
-     */
-    public function getDisputes(): Collection
-    {
-        return $this->disputes;
-    }
-
-    public function addDispute(Dispute $dispute): static
-    {
-        if (!$this->disputes->contains($dispute)) {
-            $this->disputes->add($dispute);
-            $dispute->setAuthor($this);
-        }
-
-        return $this;
-    }
-
-    public function removeDispute(Dispute $dispute): static
-    {
-        if ($this->disputes->removeElement($dispute)) {
-            // set the owning side to null (unless already changed)
-            if ($dispute->getAuthor() === $this) {
-                $dispute->setAuthor(null);
-            }
+        // Ensure bidirectional relation is set
+        if ($address !== null && !$address->getResidents()->contains($this)) {
+            $address->addResident($this);
         }
 
         return $this;

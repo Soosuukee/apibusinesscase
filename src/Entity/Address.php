@@ -55,164 +55,197 @@ class Address
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read:item'])]
     private ?int $number = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read:item'])]
     private ?string $complement = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['address:read', 'address:read:item', 'address:write'])]
+    #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $district = null;
 
     #[ORM\Column(length: 20)]
-    #[Groups(['address:read', 'address:read:item', 'address:write'])]
+    #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $zipCode = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['address:read', 'address:read:item', 'address:write'])]
+    #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $state = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['address:read', 'address:read:item', 'address:write'])]
+    #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?string $country = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?float $longitude = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['address:read:item', 'address:write'])]
+    #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?float $latitude = null;
 
-    #[ORM\OneToOne(inversedBy: 'address', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'address', targetEntity: User::class, cascade: ['persist'])]
     #[Groups(['address:admin:read'])]
-    private ?User $resident = null;
+    private Collection $residents;
 
     #[ORM\OneToMany(targetEntity: Announcement::class, mappedBy: 'address')]
-    #[Groups(['address:read:item'])]
+    #[Groups(['address:read:item', 'announcement:read', 'announcement:read:item'])]
     private Collection $announcements;
 
     public function __construct()
     {
         $this->announcements = new ArrayCollection();
+        $this->residents = new ArrayCollection();
     }
-
 
     public function getId(): ?int
     {
         return $this->id;
     }
+
     public function getNumber(): ?int
     {
         return $this->number;
     }
+
     public function setNumber(?int $number): static
     {
         $this->number = $number;
         return $this;
     }
+
     public function getComplement(): ?string
     {
         return $this->complement;
     }
+
     public function setComplement(?string $complement): static
     {
         $this->complement = $complement;
         return $this;
     }
+
     public function getStreet(): ?string
     {
         return $this->street;
     }
+
     public function setStreet(string $street): static
     {
         $this->street = $street;
         return $this;
     }
+
     public function getDistrict(): ?string
     {
         return $this->district;
     }
+
     public function setDistrict(?string $district): static
     {
         $this->district = $district;
         return $this;
     }
+
     public function getZipCode(): ?string
     {
         return $this->zipCode;
     }
+
     public function setZipCode(string $zipCode): static
     {
         $this->zipCode = $zipCode;
         return $this;
     }
+
     public function getCity(): ?string
     {
         return $this->city;
     }
+
     public function setCity(string $city): static
     {
         $this->city = $city;
         return $this;
     }
+
     public function getState(): ?string
     {
         return $this->state;
     }
+
     public function setState(?string $state): static
     {
         $this->state = $state;
         return $this;
     }
+
     public function getCountry(): ?string
     {
         return $this->country;
     }
+
     public function setCountry(string $country): static
     {
         $this->country = $country;
         return $this;
     }
+
     public function getLongitude(): ?float
     {
         return $this->longitude;
     }
+
     public function setLongitude(?float $longitude): static
     {
         $this->longitude = $longitude;
         return $this;
     }
+
     public function getLatitude(): ?float
     {
         return $this->latitude;
     }
+
     public function setLatitude(?float $latitude): static
     {
         $this->latitude = $latitude;
         return $this;
     }
 
-    public function getResident(): ?User
+    /** @return Collection<int, User> */
+    public function getResidents(): Collection
     {
-        return $this->resident;
+        return $this->residents;
     }
-    public function setResident(User $resident): static
+
+    public function addResident(User $resident): static
     {
-        if ($resident->getAddress() !== $this) {
+        if (!$this->residents->contains($resident)) {
+            $this->residents[] = $resident;
             $resident->setAddress($this);
         }
-        $this->resident = $resident;
+        return $this;
+    }
+
+    public function removeResident(User $resident): static
+    {
+        if ($this->residents->removeElement($resident)) {
+            // Reset owning side if necessary
+            if ($resident->getAddress() === $this) {
+                $resident->setAddress(null);
+            }
+        }
         return $this;
     }
 
@@ -221,6 +254,7 @@ class Address
     {
         return $this->announcements;
     }
+
     public function addAnnouncement(Announcement $announcement): static
     {
         if (!$this->announcements->contains($announcement)) {
@@ -229,6 +263,7 @@ class Address
         }
         return $this;
     }
+
     public function removeAnnouncement(Announcement $announcement): static
     {
         if ($this->announcements->removeElement($announcement)) {
