@@ -9,6 +9,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -21,8 +23,14 @@ use Doctrine\DBAL\Types\Types;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(
     operations: [
-        new GetCollection(normalizationContext: ['groups' => ['user:read']]),
-        new Get(normalizationContext: ['groups' => ['user:read:item']]),
+        new GetCollection(
+            normalizationContext: ['groups' => ['user:read']],
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER')"
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['user:read:item']],
+            security: "is_granted('ROLE_ADMIN') or object == user"
+        ),
         new Post(
             normalizationContext: ['groups' => ['user:read:item']],
             denormalizationContext: ['groups' => ['user:write']]
@@ -86,9 +94,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read:item'])]
     private array $roles = [];
 
-    #[ORM\OneToOne(mappedBy: 'resident', cascade: ['persist', 'remove'])]
-    #[Groups(['user:read:item'])]
+    #[ORM\OneToOne(mappedBy: 'resident', targetEntity: Address::class, cascade: ['persist', 'remove'])]
     private ?Address $address = null;
+
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Announcement::class)]
+    private Collection $announcements;
+
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Review::class)]
+    private Collection $reviews;
+
+    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Reservation::class)]
+    private Collection $reservations;
+
+    /**
+     * @var Collection<int, Dispute>
+     */
+    #[ORM\OneToMany(targetEntity: Dispute::class, mappedBy: 'author')]
+    private Collection $disputes;
+
+    public function __construct()
+    {
+        $this->announcements = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
+        $this->reservations = new ArrayCollection();
+        $this->disputes = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -190,6 +220,84 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($address && $address->getResident() !== $this) {
             $address->setResident($this);
         }
+        return $this;
+    }
+
+    public function getReviews(): Collection
+    {
+        return $this->reviews;
+    }
+
+    public function addReview(Review $review): static
+    {
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setAuthor($this);
+        }
+        return $this;
+    }
+
+    public function removeReview(Review $review): static
+    {
+        if ($this->reviews->removeElement($review)) {
+            if ($review->getAuthor() === $this) {
+                $review->setAuthor(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getReservations(): Collection
+    {
+        return $this->reservations;
+    }
+
+    public function addReservation(Reservation $reservation): static
+    {
+        if (!$this->reservations->contains($reservation)) {
+            $this->reservations->add($reservation);
+            $reservation->setClient($this);
+        }
+        return $this;
+    }
+
+    public function removeReservation(Reservation $reservation): static
+    {
+        if ($this->reservations->removeElement($reservation)) {
+            if ($reservation->getClient() === $this) {
+                $reservation->setClient(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Dispute>
+     */
+    public function getDisputes(): Collection
+    {
+        return $this->disputes;
+    }
+
+    public function addDispute(Dispute $dispute): static
+    {
+        if (!$this->disputes->contains($dispute)) {
+            $this->disputes->add($dispute);
+            $dispute->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDispute(Dispute $dispute): static
+    {
+        if ($this->disputes->removeElement($dispute)) {
+            // set the owning side to null (unless already changed)
+            if ($dispute->getAuthor() === $this) {
+                $dispute->setAuthor(null);
+            }
+        }
+
         return $this;
     }
 }

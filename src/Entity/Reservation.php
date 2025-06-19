@@ -2,6 +2,9 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -10,6 +13,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Enum\ReservationStatus;
 use App\Repository\ReservationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -36,7 +41,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
         )
     ]
 )]
-
+#[ApiFilter(SearchFilter::class, properties: [
+    'status' => 'exact',
+    'client.id' => 'exact',
+    'announcement.id' => 'exact'
+])]
+#[ApiFilter(DateFilter::class, properties: ['startedAt', 'endAt'])]
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
 class Reservation
 {
@@ -62,15 +72,27 @@ class Reservation
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?float $totalPaid = null;
 
-    #[ORM\OneToOne(inversedBy: 'reservation', cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne(inversedBy: 'reservations', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?User $client = null;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne(inversedBy: 'reservation', targetEntity: Announcement::class, cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?Announcement $announcement = null;
+
+    /**
+     * @var Collection<int, Dispute>
+     */
+    #[ORM\OneToMany(targetEntity: Dispute::class, mappedBy: 'reservation')]
+    private Collection $disputes;
+
+    public function __construct()
+    {
+        $this->disputes = new ArrayCollection();
+    }
+
 
     public function getId(): ?int
     {
@@ -126,7 +148,7 @@ class Reservation
         return $this->client;
     }
 
-    public function setClient(User $client): static
+    public function setClient(?User $client): static
     {
         $this->client = $client;
         return $this;
@@ -140,6 +162,36 @@ class Reservation
     public function setAnnouncement(Announcement $announcement): static
     {
         $this->announcement = $announcement;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Dispute>
+     */
+    public function getDisputes(): Collection
+    {
+        return $this->disputes;
+    }
+
+    public function addDispute(Dispute $dispute): static
+    {
+        if (!$this->disputes->contains($dispute)) {
+            $this->disputes->add($dispute);
+            $dispute->setReservation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDispute(Dispute $dispute): static
+    {
+        if ($this->disputes->removeElement($dispute)) {
+            // set the owning side to null (unless already changed)
+            if ($dispute->getReservation() === $this) {
+                $dispute->setReservation(null);
+            }
+        }
+
         return $this;
     }
 }

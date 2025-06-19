@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -16,19 +18,28 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ApiResource(
     operations: [
-        new GetCollection(normalizationContext: ['groups' => ['amenity:read']]),
-        new Get(normalizationContext: ['groups' => ['amenity:read:item']]),
+        new GetCollection(
+            normalizationContext: ['groups' => ['amenity:read']]
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['amenity:read:item']]
+        ),
         new Post(
             normalizationContext: ['groups' => ['amenity:read:item']],
-            denormalizationContext: ['groups' => ['amenity:write']]
+            denormalizationContext: ['groups' => ['amenity:write']],
+            security: "is_granted('ROLE_ADMIN')"
         ),
         new Put(
             normalizationContext: ['groups' => ['amenity:read:item']],
-            denormalizationContext: ['groups' => ['amenity:write']]
+            denormalizationContext: ['groups' => ['amenity:write']],
+            security: "is_granted('ROLE_ADMIN')"
         ),
-        new Delete()
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')"
+        )
     ]
 )]
+#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial'])]
 #[ORM\Entity(repositoryClass: AmenityRepository::class)]
 class Amenity
 {

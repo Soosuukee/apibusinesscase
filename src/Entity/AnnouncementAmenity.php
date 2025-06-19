@@ -5,6 +5,9 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Repository\AnnouncementAmenityRepository;
@@ -14,10 +17,21 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(normalizationContext: ['groups' => ['announcement_amenity:read']]),
-        new Get(normalizationContext: ['groups' => ['announcement_amenity:read']])
+        new Get(normalizationContext: ['groups' => ['announcement_amenity:read']]),
+        new Post(
+            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            denormalizationContext: ['groups' => ['announcement_amenity:write']]
+        ),
+        new Put(
+            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            denormalizationContext: ['groups' => ['announcement_amenity:write']]
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user"
+        )
     ]
 )]
-#[ApiFilter(SearchFilter::class, properties: ['announcement.id' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: ['announcement.id' => 'exact', 'amenity.id' => 'exact',])]
 #[ORM\Entity(repositoryClass: AnnouncementAmenityRepository::class)]
 class AnnouncementAmenity
 {
@@ -29,12 +43,12 @@ class AnnouncementAmenity
 
     #[ORM\ManyToOne(inversedBy: 'announcementAmenities')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['announcement_amenity:read'])]
+    #[Groups(['announcement_amenity:read', 'announcement_amenity:write'])]
     private ?Amenity $amenity = null;
 
-    #[ORM\ManyToOne(inversedBy: 'announcementAmenities')]
+    #[ORM\ManyToOne(inversedBy: 'amenities')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['announcement_amenity:read'])]
+    #[Groups(['announcement_amenity:read', 'announcement_amenity:write'])]
     private ?Announcement $announcement = null;
 
     public function getId(): ?int

@@ -2,6 +2,9 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -14,14 +17,33 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
+    normalizationContext: ['groups' => ['message:read']],
+    denormalizationContext: ['groups' => ['message:write']],
     operations: [
-        new GetCollection(normalizationContext: ['groups' => ['message:read']]),
-        new Get(normalizationContext: ['groups' => ['message:read']]),
-        new Post(denormalizationContext: ['groups' => ['message:write']]),
-        new Put(denormalizationContext: ['groups' => ['message:write']]),
-        new Delete()
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN') or object.getSender() == user or object.getRecipient() == user"
+        ),
+        new Get(
+            security: "is_granted('ROLE_ADMIN') or object.getSender() == user or object.getRecipient() == user"
+        ),
+        new Post(
+            security: "is_granted('ROLE_USER') and object.getAnnouncement().getOwner() == user or object.getRecipient() == user"
+        ),
+        new Put(
+            security: "is_granted('ROLE_ADMIN') or object.getSender() == user"
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')"
+        )
     ]
 )]
+
+#[ApiFilter(SearchFilter::class, properties: [
+    'sender.id' => 'exact',
+    'recipient.id' => 'exact',
+    'content' => 'partial'
+])]
+#[ApiFilter(DateFilter::class, properties: ['sentAt'])]
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
 class Message
 {
@@ -43,6 +65,10 @@ class Message
     #[Groups(['message:read'])]
     private ?\DateTimeImmutable $readAt = null;
 
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['message:read', 'message:write'])]
+    private bool $isRead = false;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['message:read', 'message:write'])]
@@ -53,7 +79,7 @@ class Message
     #[Groups(['message:read', 'message:write'])]
     private ?User $recipient = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'messages')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['message:read', 'message:write'])]
     private ?Announcement $announcement = null;
@@ -93,6 +119,17 @@ class Message
     public function setReadAt(?\DateTimeImmutable $readAt): static
     {
         $this->readAt = $readAt;
+        return $this;
+    }
+
+    public function isRead(): bool
+    {
+        return $this->isRead;
+    }
+
+    public function setIsRead(bool $isRead): static
+    {
+        $this->isRead = $isRead;
         return $this;
     }
 

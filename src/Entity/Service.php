@@ -8,6 +8,8 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Repository\ServiceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -21,15 +23,25 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Get(normalizationContext: ['groups' => ['service:read:item']]),
         new Post(
             normalizationContext: ['groups' => ['service:read:item']],
-            denormalizationContext: ['groups' => ['service:write']]
+            denormalizationContext: ['groups' => ['service:write']],
+            security: "is_granted('ROLE_ADMIN')"
         ),
         new Put(
             normalizationContext: ['groups' => ['service:read:item']],
-            denormalizationContext: ['groups' => ['service:write']]
+            denormalizationContext: ['groups' => ['service:write']],
+            security: "is_granted('ROLE_ADMIN')"
         ),
-        new Delete()
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')"
+        )
     ]
 )]
+#[ApiFilter(SearchFilter::class, properties: [
+    'title' => 'partial',
+    'description' => 'partial',
+    'id' => 'exact',
+    'announcementServices.announcement.id' => 'exact'
+])]
 #[ORM\Entity(repositoryClass: ServiceRepository::class)]
 class Service
 {
