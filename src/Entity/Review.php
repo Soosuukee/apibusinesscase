@@ -62,7 +62,7 @@ class Review
     #[Groups(['review:read:item', 'review:owner:write'])]
     private ?string $ownerReply = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Groups(['review:read', 'review:read:item'])]
     private ?\DateTimeInterface $createdAt = null;
 
@@ -122,12 +122,6 @@ class Review
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeInterface $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-        return $this;
     }
 
     public function getAuthor(): ?User

@@ -72,12 +72,12 @@ class Reservation
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?float $totalPaid = null;
 
-    #[ORM\ManyToOne(inversedBy: 'reservations', cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?User $client = null;
 
-    #[ORM\ManyToOne(inversedBy: 'reservation', targetEntity: Announcement::class, cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
     private ?Announcement $announcement = null;
@@ -159,7 +159,7 @@ class Reservation
         return $this->announcement;
     }
 
-    public function setAnnouncement(Announcement $announcement): static
+    public function setAnnouncement(?Announcement $announcement): static
     {
         $this->announcement = $announcement;
         return $this;

@@ -18,24 +18,24 @@ use Symfony\Component\Serializer\Annotation\Groups;
     operations: [
         new GetCollection(
             normalizationContext: ['groups' => ['dispute_image:read']],
-            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getClient() == user"
         ),
         new Get(
             normalizationContext: ['groups' => ['dispute_image:read:item']],
-            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getClient() == user"
         ),
         new Post(
             denormalizationContext: ['groups' => ['dispute_image:write']],
             normalizationContext: ['groups' => ['dispute_image:read:item']],
-            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getClient() == user"
         ),
         new Put(
             denormalizationContext: ['groups' => ['dispute_image:write']],
             normalizationContext: ['groups' => ['dispute_image:read:item']],
-            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getClient() == user"
         ),
         new Delete(
-            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getDispute().getAuthor() == user or object.getDispute().getReservation().getClient() == user"
         )
     ]
 )]
@@ -75,7 +75,6 @@ class DisputeImage
     public function setImageUrl(string $imageUrl): static
     {
         $this->imageUrl = $imageUrl;
-
         return $this;
     }
 
@@ -87,7 +86,6 @@ class DisputeImage
     public function setDispute(?Dispute $dispute): static
     {
         $this->dispute = $dispute;
-
         return $this;
     }
 
@@ -99,7 +97,6 @@ class DisputeImage
     public function setUploadedAt(\DateTimeImmutable $uploadedAt): static
     {
         $this->uploadedAt = $uploadedAt;
-
         return $this;
     }
 }

@@ -19,11 +19,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new GetCollection(normalizationContext: ['groups' => ['announcement_amenity:read']]),
         new Get(normalizationContext: ['groups' => ['announcement_amenity:read']]),
         new Post(
-            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            securityPostDenormalize: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
             denormalizationContext: ['groups' => ['announcement_amenity:write']]
         ),
         new Put(
-            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            securityPostDenormalize: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
             denormalizationContext: ['groups' => ['announcement_amenity:write']]
         ),
         new Delete(
@@ -31,7 +31,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
         )
     ]
 )]
-#[ApiFilter(SearchFilter::class, properties: ['announcement.id' => 'exact', 'amenity.id' => 'exact',])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'announcement.id' => 'exact',
+    'amenity.id' => 'exact'
+])]
 #[ORM\Entity(repositoryClass: AnnouncementAmenityRepository::class)]
 class AnnouncementAmenity
 {

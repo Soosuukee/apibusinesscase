@@ -3,14 +3,14 @@
 namespace App\Entity;
 
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use App\Repository\UnavailableTimeSlotRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -53,13 +53,13 @@ class UnavailableTimeSlot
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
     private ?string $reason = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime')]
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
-    private ?\DateTime $startDate = null;
+    private ?\DateTimeInterface $startDate = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime')]
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
-    private ?\DateTime $endDate = null;
+    private ?\DateTimeInterface $endDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'unavailabilities')]
     #[ORM\JoinColumn(nullable: false)]
@@ -82,23 +82,23 @@ class UnavailableTimeSlot
         return $this;
     }
 
-    public function getStartDate(): ?\DateTime
+    public function getStartDate(): ?\DateTimeInterface
     {
         return $this->startDate;
     }
 
-    public function setStartDate(\DateTime $startDate): static
+    public function setStartDate(\DateTimeInterface $startDate): static
     {
         $this->startDate = $startDate;
         return $this;
     }
 
-    public function getEndDate(): ?\DateTime
+    public function getEndDate(): ?\DateTimeInterface
     {
         return $this->endDate;
     }
 
-    public function setEndDate(\DateTime $endDate): static
+    public function setEndDate(\DateTimeInterface $endDate): static
     {
         $this->endDate = $endDate;
         return $this;

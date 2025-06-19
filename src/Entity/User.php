@@ -54,7 +54,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'reservation:read:item', 'reservation:read'])]
+    #[Groups(['user:read', 'user:read:item', 'user:write', 'reservation:read:item', 'reservation:read', 'user:admin:read'])]
     #[Assert\NotBlank]
     #[Assert\Email]
     private ?string $email = null;
@@ -66,12 +66,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'reservation:read:item', 'reservation:read'])]
-    private ?string $name = null;
+    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'announcement:read', 'reservation:read:item', 'reservation:read'])]
+    private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'reservation:read:item', 'reservation:read'])]
-    private ?string $firstName = null;
+    #[Groups(['user:read', 'user:read:item', 'user:write', 'announcement:read:item', 'announcement:read', 'reservation:read:item', 'reservation:read'])]
+    private ?string $lastName = null;
 
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: true)]
@@ -91,12 +91,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTime $birthDate = null;
 
     #[ORM\Column]
-    #[Groups(['user:read:item'])]
+    #[Groups(['user:read:item', 'user:read'])]
     private array $roles = [];
 
     #[ORM\OneToOne(mappedBy: 'resident', targetEntity: Address::class, cascade: ['persist', 'remove'])]
     private ?Address $address = null;
 
+    #[Groups(['user:read:item'])]
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Announcement::class)]
     private Collection $announcements;
 
@@ -118,6 +119,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->reviews = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->disputes = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -152,19 +154,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
     public function setRoles(array $roles): static
     {
-        $this->roles = $roles;
+        $roles[] = 'ROLE_USER';
+        $this->roles = array_unique($roles);
         return $this;
     }
     public function eraseCredentials(): void {}
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-    public function setName(string $name): static
-    {
-        $this->name = $name;
-        return $this;
-    }
     public function getFirstName(): ?string
     {
         return $this->firstName;
@@ -172,6 +166,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setFirstName(string $firstName): static
     {
         $this->firstName = $firstName;
+        return $this;
+    }
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+    public function setLastName(string $lastName): static
+    {
+        $this->lastName = $lastName;
         return $this;
     }
     public function getBillingAddress(): ?Address
@@ -196,11 +199,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->createdAt;
     }
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-        return $this;
-    }
     public function getBirthDate(): ?\DateTime
     {
         return $this->birthDate;
@@ -220,6 +218,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($address && $address->getResident() !== $this) {
             $address->setResident($this);
         }
+        return $this;
+    }
+
+    public function getAnnouncements(): Collection
+    {
+        return $this->announcements;
+    }
+
+    public function addAnnouncement(Announcement $announcement): static
+    {
+        if (!$this->announcements->contains($announcement)) {
+            $this->announcements->add($announcement);
+            $announcement->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnnouncement(Announcement $announcement): static
+    {
+        if ($this->announcements->removeElement($announcement)) {
+            // set the owning side to null (unless already changed)
+            if ($announcement->getOwner() === $this) {
+                $announcement->setOwner(null);
+            }
+        }
+
         return $this;
     }
 

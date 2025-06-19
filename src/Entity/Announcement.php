@@ -118,9 +118,9 @@ class Announcement
     #[Groups(['announcement:read'])]
     private Collection $amenities;
 
-    #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Reservation::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Reservation::class, cascade: ['persist'])]
     #[Groups(['announcement:read'])]
-    private ?Reservation $reservation = null;
+    private Collection $reservations;
 
     #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'announcement', orphanRemoval: true)]
     #[Groups(['announcement:read'])]
@@ -138,6 +138,7 @@ class Announcement
         $this->messages = new ArrayCollection();
         $this->images = new ArrayCollection();
         $this->reviews = new ArrayCollection();
+        $this->reservations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -243,16 +244,30 @@ class Announcement
         $this->address = $address;
         return $this;
     }
-    public function getReservation(): ?Reservation
+    /** @return Collection<int, Reservation> */
+    public function getReservations(): Collection
     {
-        return $this->reservation;
+        return $this->reservations;
     }
-    public function setReservation(Reservation $reservation): static
+
+    public function addReservation(Reservation $reservation): static
     {
-        if ($reservation->getAnnouncement() !== $this) {
+        if (!$this->reservations->contains($reservation)) {
+            $this->reservations->add($reservation);
             $reservation->setAnnouncement($this);
         }
-        $this->reservation = $reservation;
+
+        return $this;
+    }
+
+    public function removeReservation(Reservation $reservation): static
+    {
+        if ($this->reservations->removeElement($reservation)) {
+            if ($reservation->getAnnouncement() === $this) {
+                $reservation->setAnnouncement(null);
+            }
+        }
+
         return $this;
     }
     public function getMessages(): Collection

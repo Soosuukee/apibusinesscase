@@ -37,7 +37,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
         )
     ]
 )]
-
 #[ApiFilter(SearchFilter::class, properties: [
     'sender.id' => 'exact',
     'recipient.id' => 'exact',
@@ -84,6 +83,11 @@ class Message
     #[Groups(['message:read', 'message:write'])]
     private ?Announcement $announcement = null;
 
+    public function __construct()
+    {
+        $this->sentAt = new \DateTimeImmutable();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -103,12 +107,6 @@ class Message
     public function getSentAt(): ?\DateTimeImmutable
     {
         return $this->sentAt;
-    }
-
-    public function setSentAt(\DateTimeImmutable $sentAt): static
-    {
-        $this->sentAt = $sentAt;
-        return $this;
     }
 
     public function getReadAt(): ?\DateTimeImmutable

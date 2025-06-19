@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -32,6 +33,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: ['city' => 'partial', 'country' => 'partial', 'continent' => 'partial'])]
+#[ApiFilter(OrderFilter::class, properties: ['city', 'country', 'continent'], arguments: ['orderParameterName' => 'order'])]
 #[ORM\Entity(repositoryClass: FamousLocationRepository::class)]
 class FamousLocation
 {

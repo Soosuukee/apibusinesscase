@@ -21,22 +21,22 @@ use Symfony\Component\Serializer\Annotation\Groups;
     operations: [
         new GetCollection(
             normalizationContext: ['groups' => ['dispute:read']],
-            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getAuthor() == user or object.getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER')"
         ),
         new Get(
             normalizationContext: ['groups' => ['dispute:read:item']],
-            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getAuthor() == user or object.getReservation().getUser() == user"
+            security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_API_TESTER') or object.getAuthor() == user or object.getReservation().getClient() == user"
         ),
         new Post(
             denormalizationContext: ['groups' => ['dispute:write']],
-            security: "is_granted('ROLE_ADMIN') or object.getReservation().getUser() == user or object.getAuthor() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
         ),
         new Put(
             denormalizationContext: ['groups' => ['dispute:write']],
-            security: "is_granted('ROLE_ADMIN') or object.getReservation().getUser() == user or object.getAuthor() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
         ),
         new Delete(
-            security: "is_granted('ROLE_ADMIN') or object.getReservation().getUser() == user or object.getAuthor() == user"
+            security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
         )
     ]
 )]
@@ -76,9 +76,6 @@ class Dispute
     #[Groups(['dispute:read:item', 'dispute:write'])]
     private ?Reservation $reservation = null;
 
-    /**
-     * @var Collection<int, DisputeImage>
-     */
     #[ORM\OneToMany(targetEntity: DisputeImage::class, mappedBy: 'dispute')]
     #[Groups(['dispute:read:item'])]
     private Collection $disputeImages;
@@ -101,7 +98,6 @@ class Dispute
     public function setTitle(string $title): static
     {
         $this->title = $title;
-
         return $this;
     }
 
@@ -113,7 +109,6 @@ class Dispute
     public function setDescription(string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -125,7 +120,6 @@ class Dispute
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
@@ -137,7 +131,6 @@ class Dispute
     public function setIsResolved(bool $isResolved): static
     {
         $this->isResolved = $isResolved;
-
         return $this;
     }
 
@@ -149,7 +142,6 @@ class Dispute
     public function setAuthor(?User $author): static
     {
         $this->author = $author;
-
         return $this;
     }
 
@@ -161,7 +153,6 @@ class Dispute
     public function setReservation(?Reservation $reservation): static
     {
         $this->reservation = $reservation;
-
         return $this;
     }
 

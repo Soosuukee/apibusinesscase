@@ -49,6 +49,15 @@ class Image
     #[Groups(['image:read:item'])]
     private ?Announcement $announcement = null;
 
+    #[ORM\Column]
+    #[Groups(['image:read', 'image:read:item'])]
+    private ?\DateTimeImmutable $uploadedAt = null;
+
+    public function __construct()
+    {
+        $this->uploadedAt = new \DateTimeImmutable();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -74,5 +83,10 @@ class Image
     {
         $this->announcement = $announcement;
         return $this;
+    }
+
+    public function getUploadedAt(): ?\DateTimeImmutable
+    {
+        return $this->uploadedAt;
     }
 }

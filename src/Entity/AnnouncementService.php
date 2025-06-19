@@ -19,11 +19,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new GetCollection(normalizationContext: ['groups' => ['announcement_service:read']]),
         new Get(normalizationContext: ['groups' => ['announcement_service:read']]),
         new Post(
-            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            securityPostDenormalize: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
             denormalizationContext: ['groups' => ['announcement_service:write']]
         ),
         new Put(
-            security: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
+            securityPostDenormalize: "is_granted('ROLE_ADMIN') or object.getAnnouncement().getOwner() == user",
             denormalizationContext: ['groups' => ['announcement_service:write']]
         ),
         new Delete(

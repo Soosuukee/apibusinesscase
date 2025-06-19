@@ -62,7 +62,12 @@ class Service
     /**
      * @var Collection<int, AnnouncementService>
      */
-    #[ORM\OneToMany(targetEntity: AnnouncementService::class, mappedBy: 'service', cascade: ['persist'])]
+    #[ORM\OneToMany(
+        targetEntity: AnnouncementService::class,
+        mappedBy: 'service',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $announcementServices;
 
     public function __construct()
