@@ -60,19 +60,15 @@ class Service
     private ?string $description = null;
 
     /**
-     * @var Collection<int, AnnouncementService>
+     * @var Collection<int, Announcement>
      */
-    #[ORM\OneToMany(
-        targetEntity: AnnouncementService::class,
-        mappedBy: 'service',
-        cascade: ['persist'],
-        orphanRemoval: true
-    )]
-    private Collection $announcementServices;
+    #[ORM\ManyToMany(targetEntity: Announcement::class, mappedBy: 'services')]
+    private Collection $announcements;
+
 
     public function __construct()
     {
-        $this->announcementServices = new ArrayCollection();
+        $this->announcements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -103,29 +99,27 @@ class Service
     }
 
     /**
-     * @return Collection<int, AnnouncementService>
+     * @return Collection<int, Announcement>
      */
-    public function getAnnouncementServices(): Collection
+    public function getAnnouncements(): Collection
     {
-        return $this->announcementServices;
+        return $this->announcements;
     }
 
-    public function addAnnouncementService(AnnouncementService $announcementService): static
+    public function addAnnouncement(Announcement $announcement): static
     {
-        if (!$this->announcementServices->contains($announcementService)) {
-            $this->announcementServices->add($announcementService);
-            $announcementService->setService($this);
+        if (!$this->announcements->contains($announcement)) {
+            $this->announcements->add($announcement);
+            $announcement->addService($this);
         }
 
         return $this;
     }
 
-    public function removeAnnouncementService(AnnouncementService $announcementService): static
+    public function removeAnnouncement(Announcement $announcement): static
     {
-        if ($this->announcementServices->removeElement($announcementService)) {
-            if ($announcementService->getService() === $this) {
-                $announcementService->setService(null);
-            }
+        if ($this->announcements->removeElement($announcement)) {
+            $announcement->removeService($this);
         }
 
         return $this;

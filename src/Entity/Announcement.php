@@ -40,7 +40,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     'amenities.amenity.name' => 'partial',
-    'services.service.name' => 'partial',
+    // 'services.service.name' => 'partial',
     'address.city' => 'partial',
     'address.country' => 'exact',
     'address.continent' => 'exact'
@@ -110,14 +110,6 @@ class Announcement
     #[Groups(['announcement:read'])]
     private Collection $unavailabilities;
 
-    #[ORM\OneToMany(targetEntity: AnnouncementService::class, mappedBy: 'announcement', cascade: ['persist'])]
-    #[Groups(['announcement:read'])]
-    private Collection $services;
-
-    #[ORM\OneToMany(targetEntity: AnnouncementAmenity::class, mappedBy: 'announcement')]
-    #[Groups(['announcement:read'])]
-    private Collection $amenities;
-
     #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Reservation::class, cascade: ['persist'])]
     #[Groups(['announcement:read'])]
     private Collection $reservations;
@@ -136,16 +128,28 @@ class Announcement
     #[ORM\OneToMany(targetEntity: Resident::class, mappedBy: 'announcement')]
     private Collection $residents;
 
+    /**
+     * @var Collection<int, Amenity>
+     */
+    #[ORM\ManyToMany(targetEntity: Amenity::class, inversedBy: 'announcements')]
+    private Collection $amenities;
+
+    /**
+     * @var Collection<int, Service>
+     */
+    #[ORM\ManyToMany(targetEntity: Service::class, inversedBy: 'announcements')]
+    private Collection $services;
+
     public function __construct()
     {
         $this->unavailabilities = new ArrayCollection();
-        $this->services = new ArrayCollection();
-        $this->amenities = new ArrayCollection();
         $this->messages = new ArrayCollection();
         $this->images = new ArrayCollection();
         $this->reviews = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->residents = new ArrayCollection();
+        $this->amenities = new ArrayCollection();
+        $this->services = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -319,48 +323,6 @@ class Announcement
         }
         return $this;
     }
-    public function getServices(): Collection
-    {
-        return $this->services;
-    }
-    public function addService(AnnouncementService $service): static
-    {
-        if (!$this->services->contains($service)) {
-            $this->services->add($service);
-            $service->setAnnouncement($this);
-        }
-        return $this;
-    }
-    public function removeService(AnnouncementService $service): static
-    {
-        if ($this->services->removeElement($service)) {
-            if ($service->getAnnouncement() === $this) {
-                $service->setAnnouncement(null);
-            }
-        }
-        return $this;
-    }
-    public function getAmenities(): Collection
-    {
-        return $this->amenities;
-    }
-    public function addAmenity(AnnouncementAmenity $amenity): static
-    {
-        if (!$this->amenities->contains($amenity)) {
-            $this->amenities->add($amenity);
-            $amenity->setAnnouncement($this);
-        }
-        return $this;
-    }
-    public function removeAmenity(AnnouncementAmenity $amenity): static
-    {
-        if ($this->amenities->removeElement($amenity)) {
-            if ($amenity->getAnnouncement() === $this) {
-                $amenity->setAnnouncement(null);
-            }
-        }
-        return $this;
-    }
     public function getImages(): Collection
     {
         return $this->images;
@@ -430,6 +392,54 @@ class Announcement
                 $resident->setAnnouncement(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Amenity>
+     */
+    public function getAmenities(): Collection
+    {
+        return $this->amenities;
+    }
+
+    public function addAmenity(Amenity $amenity): static
+    {
+        if (!$this->amenities->contains($amenity)) {
+            $this->amenities->add($amenity);
+        }
+
+        return $this;
+    }
+
+    public function removeAmenity(Amenity $amenity): static
+    {
+        $this->amenities->removeElement($amenity);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Service>
+     */
+    public function getServices(): Collection
+    {
+        return $this->services;
+    }
+
+    public function addService(Service $service): static
+    {
+        if (!$this->services->contains($service)) {
+            $this->services->add($service);
+        }
+
+        return $this;
+    }
+
+    public function removeService(Service $service): static
+    {
+        $this->services->removeElement($service);
 
         return $this;
     }

@@ -10,10 +10,10 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
-use Symfony\Component\Serializer\Annotation\Groups;
-use App\Repository\AmenityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Serializer\Annotation\Groups;
+use App\Repository\AmenityRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ApiResource(
@@ -53,16 +53,19 @@ class Amenity
     #[Groups(['amenity:read', 'amenity:read:item', 'amenity:write', 'announcement:read:item'])]
     private ?string $name = null;
 
+    #[ORM\Column(length: 255)]
+    #[Groups(['amenity:read', 'amenity:read:item', 'amenity:write', 'announcement:read:item'])]
+    private ?string $description = null;
+
     /**
-     * @var Collection<int, AnnouncementAmenity>
+     * @var Collection<int, Announcement>
      */
-    #[Groups(['amenity:read:item'])]
-    #[ORM\OneToMany(mappedBy: 'amenity', targetEntity: AnnouncementAmenity::class)]
-    private Collection $announcementAmenities;
+    #[ORM\ManyToMany(targetEntity: Announcement::class, mappedBy: 'amenities')]
+    private Collection $announcements;
 
     public function __construct()
     {
-        $this->announcementAmenities = new ArrayCollection();
+        $this->announcements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -81,30 +84,39 @@ class Amenity
         return $this;
     }
 
-    /**
-     * @return Collection<int, AnnouncementAmenity>
-     */
-    public function getAnnouncementAmenities(): Collection
+    public function getDescription(): ?string
     {
-        return $this->announcementAmenities;
+        return $this->description;
     }
 
-    public function addAnnouncementAmenity(AnnouncementAmenity $announcementAmenity): static
+    public function setDescription(string $description): static
     {
-        if (!$this->announcementAmenities->contains($announcementAmenity)) {
-            $this->announcementAmenities->add($announcementAmenity);
-            $announcementAmenity->setAmenity($this);
+        $this->description = $description;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Announcement>
+     */
+    public function getAnnouncements(): Collection
+    {
+        return $this->announcements;
+    }
+
+    public function addAnnouncement(Announcement $announcement): static
+    {
+        if (!$this->announcements->contains($announcement)) {
+            $this->announcements->add($announcement);
+            $announcement->addAmenity($this);
         }
 
         return $this;
     }
 
-    public function removeAnnouncementAmenity(AnnouncementAmenity $announcementAmenity): static
+    public function removeAnnouncement(Announcement $announcement): static
     {
-        if ($this->announcementAmenities->removeElement($announcementAmenity)) {
-            if ($announcementAmenity->getAmenity() === $this) {
-                $announcementAmenity->setAmenity(null);
-            }
+        if ($this->announcements->removeElement($announcement)) {
+            $announcement->removeAmenity($this);
         }
 
         return $this;

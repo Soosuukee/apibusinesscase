@@ -38,11 +38,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read', 'address:admin:read', 'announcement:read'])]
+    #[Groups(['user:read', 'address:admin:read', 'announcement:read', 'resident:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['user:read', 'user:write'])]
+    #[Groups(['user:read', 'user:write', 'resident:read'])]
     private ?string $email = null;
 
     #[ORM\Column]
@@ -59,11 +59,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'announcement:read', 'user:write'])]
+    #[Groups(['user:read', 'announcement:read', 'user:write', 'resident:read'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'announcement:read', 'user:write'])]
+    #[Groups(['user:read', 'announcement:read', 'user:write', 'resident:read'])]
     private ?string $lastName = null;
 
     #[ORM\Column(type: 'datetime_immutable')]

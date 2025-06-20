@@ -13,14 +13,6 @@ services:
       - "../src/Entity/"
       - "../src/Kernel.php"
 
-  App\Serializer\AddressContextBuilder:
-    decorates: 'ApiPlatform\State\SerializerContextBuilderInterface'
-    arguments:
-      $decorated: '@App\Serializer\AddressContextBuilder.inner'
-      $security: "@security.helper"
-    autoconfigure: false
-    autowire: true
-
   App\Serializer\UserContextBuilder:
     decorates: 'ApiPlatform\State\SerializerContextBuilderInterface'
     arguments:
