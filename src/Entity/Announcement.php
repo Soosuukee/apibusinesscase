@@ -130,6 +130,12 @@ class Announcement
     #[Groups(['announcement:read'])]
     private Collection $reviews;
 
+    /**
+     * @var Collection<int, Resident>
+     */
+    #[ORM\OneToMany(targetEntity: Resident::class, mappedBy: 'announcement')]
+    private Collection $residents;
+
     public function __construct()
     {
         $this->unavailabilities = new ArrayCollection();
@@ -139,6 +145,7 @@ class Announcement
         $this->images = new ArrayCollection();
         $this->reviews = new ArrayCollection();
         $this->reservations = new ArrayCollection();
+        $this->residents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -394,6 +401,36 @@ class Announcement
                 $review->setAnnouncement(null);
             }
         }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Resident>
+     */
+    public function getResidents(): Collection
+    {
+        return $this->residents;
+    }
+
+    public function addResident(Resident $resident): static
+    {
+        if (!$this->residents->contains($resident)) {
+            $this->residents->add($resident);
+            $resident->setAnnouncement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeResident(Resident $resident): static
+    {
+        if ($this->residents->removeElement($resident)) {
+            // set the owning side to null (unless already changed)
+            if ($resident->getAnnouncement() === $this) {
+                $resident->setAnnouncement(null);
+            }
+        }
+
         return $this;
     }
 }

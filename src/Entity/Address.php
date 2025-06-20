@@ -54,6 +54,10 @@ class Address
     #[Groups(['address:read', 'address:read:item', 'announcement:read', 'announcement:read:item'])]
     private ?int $id = null;
 
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['address:read', 'address:write'])]
+    private bool $available = true;
+
     #[ORM\Column(nullable: true)]
     #[Groups(['address:read:item', 'address:write', 'announcement:read:item'])]
     private ?int $number = null;
@@ -94,10 +98,6 @@ class Address
     #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
     private ?float $latitude = null;
 
-    #[ORM\OneToMany(mappedBy: 'address', targetEntity: User::class, cascade: ['persist'])]
-    #[Groups(['address:admin:read'])]
-    private Collection $residents;
-
     #[ORM\OneToMany(targetEntity: Announcement::class, mappedBy: 'address')]
     #[Groups(['address:read:item', 'announcement:read', 'announcement:read:item'])]
     private Collection $announcements;
@@ -105,7 +105,6 @@ class Address
     public function __construct()
     {
         $this->announcements = new ArrayCollection();
-        $this->residents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -223,32 +222,6 @@ class Address
         return $this;
     }
 
-    /** @return Collection<int, User> */
-    public function getResidents(): Collection
-    {
-        return $this->residents;
-    }
-
-    public function addResident(User $resident): static
-    {
-        if (!$this->residents->contains($resident)) {
-            $this->residents[] = $resident;
-            $resident->setAddress($this);
-        }
-        return $this;
-    }
-
-    public function removeResident(User $resident): static
-    {
-        if ($this->residents->removeElement($resident)) {
-            // Reset owning side if necessary
-            if ($resident->getAddress() === $this) {
-                $resident->setAddress(null);
-            }
-        }
-        return $this;
-    }
-
     /** @return Collection<int, Announcement> */
     public function getAnnouncements(): Collection
     {
@@ -271,6 +244,17 @@ class Address
                 $announcement->setAddress(null);
             }
         }
+        return $this;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->available;
+    }
+
+    public function setAvailable(bool $available): static
+    {
+        $this->available = $available;
         return $this;
     }
 }
