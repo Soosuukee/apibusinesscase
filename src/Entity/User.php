@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+
+use App\Enum\Gender;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -10,6 +12,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Address;
@@ -43,6 +46,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Groups(['user:read', 'user:write', 'resident:read'])]
+    #[UniqueEntity('email', message: 'This email is already in use.')]
+    #[Assert\NotBlank(message: 'Email is required.')]
+    #[Assert\Email(message: 'The email {{ value }} is not valid.')]
     private ?string $email = null;
 
     #[ORM\Column]
@@ -73,6 +79,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime')]
     #[Groups(['user:read', 'user:write'])]
     private ?\DateTimeInterface $birthdate = null;
+
+    #[ORM\Column(length: 50)]
+    #[Groups(['user:read', 'user:write'])]
+    #[Assert\NotBlank(message: 'Gender is required.')]
+    #[Assert\Choice(
+        choices: ['male', 'female', 'other'],
+        message: 'Gender must be one of: male, female, or other.'
+    )]
+    private string $gender;
+
+    #[ORM\Column(length: 20)]
+    #[Groups(['user:read', 'user:write'])]
+    #[Assert\NotBlank(message: 'Phone number is required.')]
+    #[Assert\Regex(
+        pattern: '/^\+?[0-9]{7,20}$/',
+        message: 'Please enter a valid phone number.'
+    )]
+    private string $phoneNumber;
 
     #[ORM\ManyToOne]
     #[Groups(['user:read', 'user:write'])]
@@ -214,6 +238,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAddress(?Address $address): static
     {
         $this->address = $address;
+        return $this;
+    }
+
+    public function getGender(): string
+    {
+        return $this->gender;
+    }
+
+    public function setGender(string $gender): static
+    {
+        $this->gender = $gender;
+        return $this;
+    }
+
+    public function getPhoneNumber(): string
+    {
+        return $this->phoneNumber;
+    }
+
+    public function setPhoneNumber(string $phoneNumber): static
+    {
+        $this->phoneNumber = $phoneNumber;
         return $this;
     }
 
