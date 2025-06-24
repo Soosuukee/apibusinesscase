@@ -14,6 +14,8 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Repository\FamousLocationRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ApiResource(
     operations: [
@@ -45,26 +47,41 @@ class FamousLocation
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\NotBlank(message: 'City is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'City name cannot be longer than {{ limit }} characters.')]
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\Length(max: 255, maxMessage: 'Description cannot be longer than {{ limit }} characters.')]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\NotBlank(message: 'Zip code is required.')]
+    #[Assert\Length(max: 20, maxMessage: 'Zip code cannot be longer than {{ limit }} characters.')]
+    #[Assert\Regex(
+        pattern: '/^[0-9A-Za-z -]+$/',
+        message: 'Zip code format is invalid.'
+    )]
     private ?string $zipcode = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\NotBlank(message: 'Image URL or path is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Image path cannot be longer than {{ limit }} characters.')]
     private ?string $image = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\NotBlank(message: 'Country is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Country name cannot be longer than {{ limit }} characters.')]
     private ?string $country = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
+    #[Assert\NotBlank(message: 'Continent is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Continent name cannot be longer than {{ limit }} characters.')]
     private ?string $continent = null;
 
     public function getId(): ?int

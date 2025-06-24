@@ -15,6 +15,8 @@ use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\AmenityRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ApiResource(
     operations: [
@@ -51,10 +53,20 @@ class Amenity
 
     #[ORM\Column(length: 255)]
     #[Groups(['amenity:read', 'amenity:read:item', 'amenity:write', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Name is required.')]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Name cannot be longer than {{ limit }} characters.'
+    )]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['amenity:read', 'amenity:read:item', 'amenity:write', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Description is required.')]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Description cannot be longer than {{ limit }} characters.'
+    )]
     private ?string $description = null;
 
     /**

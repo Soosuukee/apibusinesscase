@@ -2,17 +2,19 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\DisputeImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
@@ -43,6 +45,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: DisputeImageRepository::class)]
 class DisputeImage
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -51,16 +55,19 @@ class DisputeImage
 
     #[ORM\Column(length: 255)]
     #[Groups(['dispute_image:read', 'dispute_image:read:item', 'dispute_image:write', 'dispute:read:item'])]
+    #[Assert\NotBlank(message: 'Image URL is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Image URL cannot be longer than {{ limit }} characters.')]
+    #[Assert\Url(message: 'The value {{ value }} is not a valid URL.')]
     private ?string $imageUrl = null;
 
     #[ORM\ManyToOne(inversedBy: 'disputeImages')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['dispute_image:read:item', 'dispute_image:write'])]
+    #[Assert\NotNull(message: 'Dispute must be associated.')]
     private ?Dispute $dispute = null;
 
-    #[ORM\Column]
-    #[Groups(['dispute_image:read:item'])]
-    private ?\DateTimeImmutable $uploadedAt = null;
+
+
 
     public function getId(): ?int
     {
@@ -86,17 +93,6 @@ class DisputeImage
     public function setDispute(?Dispute $dispute): static
     {
         $this->dispute = $dispute;
-        return $this;
-    }
-
-    public function getUploadedAt(): ?\DateTimeImmutable
-    {
-        return $this->uploadedAt;
-    }
-
-    public function setUploadedAt(\DateTimeImmutable $uploadedAt): static
-    {
-        $this->uploadedAt = $uploadedAt;
         return $this;
     }
 }

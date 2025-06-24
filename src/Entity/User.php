@@ -16,6 +16,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Address;
+use App\Entity\Traits\TimestampableTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -36,8 +37,20 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity('email', message: 'This email is already in use.')]
+#[ApiFilter(SearchFilter::class, properties: [
+    'email' => 'partial',
+    'firstName' => 'partial',
+    'lastName' => 'partial',
+    'phoneNumber' => 'partial',
+    'gender' => 'exact',
+    'address.city' => 'partial',
+    'address.zipCode' => 'exact'
+])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -46,7 +59,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Groups(['user:read', 'user:write', 'resident:read'])]
-    #[UniqueEntity('email', message: 'This email is already in use.')]
     #[Assert\NotBlank(message: 'Email is required.')]
     #[Assert\Email(message: 'The email {{ value }} is not valid.')]
     private ?string $email = null;
@@ -72,10 +84,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'announcement:read', 'user:write', 'resident:read'])]
     private ?string $lastName = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
-    #[Groups(['user:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
-
     #[ORM\Column(type: 'datetime')]
     #[Groups(['user:read', 'user:write'])]
     private ?\DateTimeInterface $birthdate = null;
@@ -87,7 +95,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         choices: ['male', 'female', 'other'],
         message: 'Gender must be one of: male, female, or other.'
     )]
-    private string $gender;
+    private Gender $gender;
 
     #[ORM\Column(length: 20)]
     #[Groups(['user:read', 'user:write'])]
@@ -129,7 +137,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->disputes = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->reviews = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
         $this->residents = new ArrayCollection();
     }
 
@@ -225,11 +232,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
     public function getAddress(): ?Address
     {
         return $this->address;
@@ -241,12 +243,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getGender(): string
+    public function getGender(): Gender
     {
         return $this->gender;
     }
 
-    public function setGender(string $gender): static
+    public function setGender(Gender $gender): static
     {
         $this->gender = $gender;
         return $this;

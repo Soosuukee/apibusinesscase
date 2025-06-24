@@ -20,3 +20,11 @@ services:
       $security: "@security.helper"
     autoconfigure: false
     autowire: true
+  App\EventListener\TimestampableListener:
+    tags:
+      - { name: doctrine.event_listener, event: prePersist }
+      - { name: doctrine.event_listener, event: preUpdate }
+  App\EventListener\UserPasswordListener:
+    tags:
+      - { name: doctrine.event_listener, event: prePersist }
+      - { name: doctrine.event_listener, event: preUpdate }

@@ -15,6 +15,8 @@ use App\Repository\AddressRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ApiResource(
     operations: [
@@ -60,6 +62,8 @@ class Address
 
     #[ORM\Column(nullable: true)]
     #[Groups(['address:read:item', 'address:write', 'announcement:read:item'])]
+    #[Assert\Positive(message: 'Number must be positive.')]
+
     private ?int $number = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -68,6 +72,9 @@ class Address
 
     #[ORM\Column(length: 255)]
     #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Street is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Street cannot exceed {{ limit }} characters.')]
+
     private ?string $street = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -76,10 +83,20 @@ class Address
 
     #[ORM\Column(length: 20)]
     #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Zip code is required.')]
+    #[Assert\Length(max: 20, maxMessage: 'Zip code cannot exceed {{ limit }} characters.')]
+    #[Assert\Regex(
+        pattern: '/^[0-9A-Za-z -]+$/',
+        message: 'Please enter a valid zip code.'
+    )]
+
     private ?string $zipCode = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'City is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'City name cannot exceed {{ limit }} characters.')]
+
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -88,14 +105,22 @@ class Address
 
     #[ORM\Column(length: 255)]
     #[Groups(['address:read', 'address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Country is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Country name cannot exceed {{ limit }} characters.')]
+
+
     private ?string $country = null;
 
     #[ORM\Column(nullable: true)]
     #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\Range(min: -180, max: 180, notInRangeMessage: 'Longitude must be between -180 and 180.')]
+
     private ?float $longitude = null;
 
     #[ORM\Column(nullable: true)]
     #[Groups(['address:read:item', 'address:write', 'announcement:read', 'announcement:read:item'])]
+    #[Assert\Range(min: -90, max: 90, notInRangeMessage: 'Latitude must be between -90 and 90.')]
+
     private ?float $latitude = null;
 
     #[ORM\OneToMany(targetEntity: Announcement::class, mappedBy: 'address')]

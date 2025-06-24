@@ -8,7 +8,9 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\Entity\Traits\TimestampableTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use App\Repository\ImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -34,6 +36,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ImageRepository::class)]
 class Image
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -42,21 +46,16 @@ class Image
 
     #[ORM\Column(length: 255)]
     #[Groups(['image:read', 'image:read:item', 'image:write', 'announcement:read:item', 'announcement:read'])]
+    #[Assert\NotBlank(message: 'Image URL is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Image URL cannot be longer than {{ limit }} characters.')]
+    #[Assert\Url(message: 'The image URL must be valid.')]
     private ?string $imageUrl = null;
 
     #[ORM\ManyToOne(inversedBy: 'images')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['image:read:item'])]
+    #[Assert\NotNull(message: 'An image must be linked to an announcement.')]
     private ?Announcement $announcement = null;
-
-    #[ORM\Column]
-    #[Groups(['image:read', 'image:read:item'])]
-    private ?\DateTimeImmutable $uploadedAt = null;
-
-    public function __construct()
-    {
-        $this->uploadedAt = new \DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
@@ -83,10 +82,5 @@ class Image
     {
         $this->announcement = $announcement;
         return $this;
-    }
-
-    public function getUploadedAt(): ?\DateTimeImmutable
-    {
-        return $this->uploadedAt;
     }
 }

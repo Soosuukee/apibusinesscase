@@ -17,7 +17,7 @@ security:
       pattern: ^/api/login
       stateless: true
       json_login:
-        check_path: /api/login
+        check_path: /api/login_check
         username_path: email
         password_path: password
 
@@ -29,4 +29,5 @@ security:
 
   access_control:
     - { path: ^/api/login, roles: PUBLIC_ACCESS }
-    - { path: ^/api, roles: PUBLIC_ACCESS }
+    - { path: ^/api/register, roles: PUBLIC_ACCESS }
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

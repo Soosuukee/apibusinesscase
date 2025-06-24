@@ -16,6 +16,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use App\Entity\Traits\TimestampableTrait;
+
+
 
 #[ApiResource(
     operations: [
@@ -44,6 +48,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: DisputeRepository::class)]
 class Dispute
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -52,28 +58,37 @@ class Dispute
 
     #[ORM\Column(length: 255)]
     #[Groups(['dispute:read', 'dispute:read:item', 'dispute:write'])]
+    #[Assert\NotBlank(message: 'Title is required.')]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Title cannot be longer than {{ limit }} characters.'
+    )]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['dispute:read:item', 'dispute:write'])]
+    #[Assert\NotBlank(message: 'Description is required.')]
+    #[Assert\Length(
+        min: 20,
+        minMessage: 'Description must be at least {{ limit }} characters long.'
+    )]
     private ?string $description = null;
 
     #[ORM\Column]
-    #[Groups(['dispute:read:item'])]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column]
     #[Groups(['dispute:read', 'dispute:read:item', 'dispute:write'])]
+    #[Assert\NotNull(message: 'Resolution status is required.')]
     private ?bool $isResolved = null;
 
     #[ORM\ManyToOne(inversedBy: 'disputes')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['dispute:read:item', 'dispute:write'])]
+    #[Assert\NotNull(message: 'Author is required.')]
     private ?User $author = null;
 
     #[ORM\ManyToOne(inversedBy: 'disputes')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['dispute:read:item', 'dispute:write'])]
+    #[Assert\NotNull(message: 'Reservation is required.')]
     private ?Reservation $reservation = null;
 
     #[ORM\OneToMany(targetEntity: DisputeImage::class, mappedBy: 'dispute')]
@@ -109,17 +124,6 @@ class Dispute
     public function setDescription(string $description): static
     {
         $this->description = $description;
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
         return $this;
     }
 

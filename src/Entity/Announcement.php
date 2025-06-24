@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
@@ -20,6 +21,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use App\Entity\Traits\TimestampableTrait;
+
 
 #[ApiResource(
     normalizationContext: ['groups' => ['announcement:read']],
@@ -39,18 +43,35 @@ use Symfony\Component\Serializer\Annotation\Groups;
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: [
-    'amenities.amenity.name' => 'partial',
-    // 'services.service.name' => 'partial',
+    'title' => 'partial',
+    'description' => 'partial',
+    'status' => 'exact',
     'address.city' => 'partial',
     'address.country' => 'exact',
-    'address.continent' => 'exact'
+    'address.continent' => 'exact',
+    'amenities.amenity.name' => 'partial',
+    'services.service.name' => 'partial',
+    'owner.id' => 'exact'
 ])]
 #[ApiFilter(ExistsFilter::class, properties: ['reviews'])]
-#[ApiFilter(DateFilter::class, properties: ['startAt', 'endAt'])]
-#[ApiFilter(RangeFilter::class, properties: ['price'])]
+#[ApiFilter(DateFilter::class, properties: ['startAt', 'endAt', 'createdAt'])]
+#[ApiFilter(RangeFilter::class, properties: ['price', 'capacity'])]
+#[ApiFilter(ExistsFilter::class, properties: [
+    'reviews',
+    'reservations'
+])]
+#[ApiFilter(OrderFilter::class, properties: [
+    'price',
+    'capacity',
+    'startAt',
+    'endAt',
+    'createdAt'
+])]
 #[ORM\Entity(repositoryClass: AnnouncementRepository::class)]
 class Announcement
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -59,22 +80,31 @@ class Announcement
 
     #[ORM\Column(length: 255)]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotBlank(message: 'Title is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Title cannot exceed {{ limit }} characters.')]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotBlank(message: 'Description is required.')]
+    #[Assert\Length(min: 20, minMessage: 'Description must be at least {{ limit }} characters long.')]
     private ?string $description = null;
 
     #[ORM\Column]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotNull(message: 'Price is required.')]
+    #[Assert\Positive(message: 'Price must be greater than zero.')]
     private ?int $price = null;
 
     #[ORM\Column]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotNull(message: 'Capacity is required.')]
+    #[Assert\Positive(message: 'Capacity must be greater than zero.')]
     private ?int $capacity = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotBlank(message: 'Cover image is required.')]
     private ?string $covering_image = null;
 
     #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Message::class)]
@@ -82,18 +112,21 @@ class Announcement
 
     #[ORM\Column]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotNull(message: 'Start date is required.')]
+    #[Assert\Type(\DateTime::class)]
     private ?\DateTime $startAt = null;
 
     #[ORM\Column]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotNull(message: 'End date is required.')]
+    #[Assert\Type(\DateTime::class)]
+    #[Assert\GreaterThan(propertyPath: 'startAt', message: 'End date must be after start date.')]
+    #[Assert\Length(max: 255, maxMessage: 'Cover image path is too long.')]
     private ?\DateTime $endAt = null;
-
-    #[ORM\Column]
-    #[Groups(['announcement:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(enumType: AnnouncementStatus::class)]
     #[Groups(['announcement:read', 'announcement:write'])]
+    #[Assert\NotNull(message: 'Status is required.')]
     private ?AnnouncementStatus $status = AnnouncementStatus::DRAFT;
 
     #[ORM\ManyToOne(inversedBy: 'announcements')]
@@ -217,15 +250,6 @@ class Announcement
     public function setEndAt(\DateTime $endAt): static
     {
         $this->endAt = $endAt;
-        return $this;
-    }
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
         return $this;
     }
     public function getStatus(): ?AnnouncementStatus
