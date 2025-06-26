@@ -74,6 +74,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         min: 8,
         minMessage: 'Password should be at least {{ limit }} long.'
     )]
+    #[Assert\Regex(
+        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+        message: 'Please enter a valid password (min. 8 characters, with at least one uppercase letter, one lowercase letter, one number, and one special character).'
+    )]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
@@ -381,7 +385,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->residents->contains($resident)) {
             $this->residents->add($resident);
-            $resident->setResident($this);
+            $resident->setUser($this);
         }
 
         return $this;
@@ -391,8 +395,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->residents->removeElement($resident)) {
             // set the owning side to null (unless already changed)
-            if ($resident->getResident() === $this) {
-                $resident->setResident(null);
+            if ($resident->getUser() === $this) {
+                $resident->setUser(null);
             }
         }
 

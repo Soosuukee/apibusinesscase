@@ -44,7 +44,7 @@ class Resident
     #[ORM\ManyToOne(inversedBy: 'residents')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['announcement:read', 'resident:read', 'resident:write'])]
-    private ?User $resident = null;
+    private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'residents')]
     #[ORM\JoinColumn(nullable: false)]
@@ -64,14 +64,14 @@ class Resident
         return $this->id;
     }
 
-    public function getResident(): ?User
+    public function getUser(): ?User
     {
-        return $this->resident;
+        return $this->user;
     }
 
-    public function setResident(?User $resident): static
+    public function setUser(?User $user): static
     {
-        $this->resident = $resident;
+        $this->user = $user;
 
         return $this;
     }
