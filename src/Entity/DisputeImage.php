@@ -10,7 +10,6 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use App\Entity\Traits\TimestampableTrait;
 use App\Repository\DisputeImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -43,10 +42,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['dispute.id' => 'exact'])]
 #[ORM\Entity(repositoryClass: DisputeImageRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class DisputeImage
 {
-    use TimestampableTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -60,14 +58,15 @@ class DisputeImage
     #[Assert\Url(message: 'The value {{ value }} is not a valid URL.')]
     private ?string $imageUrl = null;
 
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['dispute_image:read'])]
+    private ?\DateTimeImmutable $uploadedAt = null;
+
     #[ORM\ManyToOne(inversedBy: 'disputeImages')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['dispute_image:read:item', 'dispute_image:write'])]
     #[Assert\NotNull(message: 'Dispute must be associated.')]
     private ?Dispute $dispute = null;
-
-
-
 
     public function getId(): ?int
     {
@@ -83,6 +82,17 @@ class DisputeImage
     {
         $this->imageUrl = $imageUrl;
         return $this;
+    }
+
+    public function getUploadedAt(): ?\DateTimeImmutable
+    {
+        return $this->uploadedAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setUploadedAt(): void
+    {
+        $this->uploadedAt = new \DateTimeImmutable();
     }
 
     public function getDispute(): ?Dispute

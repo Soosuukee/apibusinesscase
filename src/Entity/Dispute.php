@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\DisputeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -17,7 +18,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Entity\Traits\TimestampableTrait;
 
 
 
@@ -39,6 +39,11 @@ use App\Entity\Traits\TimestampableTrait;
             denormalizationContext: ['groups' => ['dispute:write']],
             security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
         ),
+        new Patch(
+            denormalizationContext: ['groups' => ['dispute:write']],
+            security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
+        ),
+
         new Delete(
             security: "is_granted('ROLE_ADMIN') or object.getReservation().getClient() == user or object.getAuthor() == user"
         )
@@ -46,9 +51,9 @@ use App\Entity\Traits\TimestampableTrait;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['title' => 'partial', 'isResolved' => 'exact', 'author.id' => 'exact'])]
 #[ORM\Entity(repositoryClass: DisputeRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Dispute
 {
-    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -64,6 +69,17 @@ class Dispute
         maxMessage: 'Title cannot be longer than {{ limit }} characters.'
     )]
     private ?string $title = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups([
+        'dispute:read',
+        'dispute:read:item'
+    ])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['dispute:read', 'dispute:read:item'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['dispute:read:item', 'dispute:write'])]
@@ -114,6 +130,28 @@ class Dispute
     {
         $this->title = $title;
         return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getDescription(): ?string

@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Patch;
 use App\Enum\AnnouncementStatus;
 use App\Repository\AnnouncementRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -22,8 +23,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Entity\Traits\TimestampableTrait;
-
 
 #[ApiResource(
     normalizationContext: ['groups' => ['announcement:read']],
@@ -37,10 +36,15 @@ use App\Entity\Traits\TimestampableTrait;
         new Put(
             security: "is_granted('ROLE_ADMIN') or object.getOwner() == user"
         ),
+        new Patch(
+            denormalizationContext: ['groups' => ['announcement:write']],
+            security: "is_granted('ROLE_ADMIN') or object.getOwner() == user"
+        ),
         new Delete(
             security: "is_granted('ROLE_ADMIN') or object.getOwner() == user"
         )
     ]
+
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     'title' => 'partial',
@@ -68,9 +72,9 @@ use App\Entity\Traits\TimestampableTrait;
     'createdAt'
 ])]
 #[ORM\Entity(repositoryClass: AnnouncementRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Announcement
 {
-    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -109,6 +113,14 @@ class Announcement
 
     #[ORM\OneToMany(mappedBy: 'announcement', targetEntity: Message::class)]
     private Collection $messages;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['announcement:read', 'announcement:read:item'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['announcement:read', 'announcement:read:item'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column]
     #[Groups(['announcement:read', 'announcement:write'])]
@@ -233,6 +245,28 @@ class Announcement
     {
         $this->covering_image = $covering_image;
         return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
     public function getStartAt(): ?\DateTime
     {

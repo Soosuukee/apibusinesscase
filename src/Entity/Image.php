@@ -8,7 +8,6 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\Entity\Traits\TimestampableTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Repository\ImageRepository;
@@ -34,10 +33,9 @@ use Doctrine\ORM\Mapping as ORM;
     ]
 )]
 #[ORM\Entity(repositoryClass: ImageRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Image
 {
-    use TimestampableTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -50,6 +48,9 @@ class Image
     #[Assert\Length(max: 255, maxMessage: 'Image URL cannot be longer than {{ limit }} characters.')]
     #[Assert\Url(message: 'The image URL must be valid.')]
     private ?string $imageUrl = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['image:read'])]
+    private ?\DateTimeImmutable $uploadedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'images')]
     #[ORM\JoinColumn(nullable: false)]
@@ -71,6 +72,17 @@ class Image
     {
         $this->imageUrl = $imageUrl;
         return $this;
+    }
+
+    public function getUploadedAt(): ?\DateTimeImmutable
+    {
+        return $this->uploadedAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setUploadedAt(): void
+    {
+        $this->uploadedAt = new \DateTimeImmutable();
     }
 
     public function getAnnouncement(): ?Announcement

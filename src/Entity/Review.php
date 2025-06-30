@@ -11,7 +11,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use App\Entity\Traits\TimestampableTrait;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\ReviewRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -29,11 +29,16 @@ use Symfony\Component\Serializer\Annotation\Groups;
             denormalizationContext: ['groups' => ['review:write', 'review:owner:write']],
             security: "is_granted('ROLE_ADMIN') or object.getAuthor() == user or object.getAnnouncement().getOwner() == user"
         ),
+        new Patch(
+            denormalizationContext: ['groups' => ['review:write', 'review:owner:write']],
+            security: "is_granted('ROLE_ADMIN') or object.getAuthor() == user or object.getAnnouncement().getOwner() == user"
+        ),
         new Delete(
             security: "is_granted('ROLE_ADMIN') or object.getAuthor() == user"
         )
     ]
 )]
+
 #[ApiFilter(SearchFilter::class, properties: [
     'announcement.id' => 'exact',
     'author.id' => 'exact'
@@ -43,10 +48,9 @@ use Symfony\Component\Serializer\Annotation\Groups;
     'createdAt' => 'DESC'
 ], arguments: ['orderParameterName' => 'order'])]
 #[ORM\Entity(repositoryClass: ReviewRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Review
 {
-    use TimestampableTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -65,6 +69,13 @@ class Review
     #[Groups(['review:read:item', 'review:owner:write'])]
     private ?string $ownerReply = null;
 
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['review:read', 'review:read:item'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['review:read', 'review:read:item'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
     #[ORM\JoinColumn(nullable: false)]
@@ -107,6 +118,28 @@ class Review
     public function getOwnerReply(): ?string
     {
         return $this->ownerReply;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function setOwnerReply(?string $ownerReply): static

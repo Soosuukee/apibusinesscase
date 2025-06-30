@@ -12,11 +12,11 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\Patch;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Address;
-use App\Entity\Traits\TimestampableTrait;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -32,9 +32,11 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(security: "is_granted('ROLE_ADMIN') or object == user"),
         new Post(),
         new Put(security: "is_granted('ROLE_ADMIN') or object == user"),
+        new Patch(security: "is_granted('ROLE_ADMIN') or object == user"),
         new Delete(security: "is_granted('ROLE_ADMIN') or object == user")
     ]
 )]
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[UniqueEntity('email', message: 'This email is already in use.')]
@@ -47,10 +49,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     'address.city' => 'partial',
     'address.zipCode' => 'exact'
 ])]
+
+#[ORM\HasLifecycleCallbacks]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    use TimestampableTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -109,6 +111,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         message: 'Please enter a valid phone number.'
     )]
     private string $phoneNumber;
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne]
     #[Groups(['user:read', 'user:write'])]
@@ -207,6 +216,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function setUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
     public function eraseCredentials(): void
     {
         // If you store any temporary, sensitive data on the user, clear it here

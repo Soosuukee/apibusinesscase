@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Enum\ReservationStatus;
@@ -36,6 +37,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
             denormalizationContext: ['groups' => ['reservation:write']],
             security: "is_granted('ROLE_ADMIN') or object.getClient() == user"
         ),
+        new Patch(
+            denormalizationContext: ['groups' => ['reservation:write']],
+            security: "is_granted('ROLE_ADMIN') or object.getClient() == user"
+        ),
         new Delete(
             security: "is_granted('ROLE_ADMIN') or object.getClient() == user"
         )
@@ -48,6 +53,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 ])]
 #[ApiFilter(DateFilter::class, properties: ['startedAt', 'endAt'])]
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Reservation
 {
     #[ORM\Id]
@@ -55,6 +61,14 @@ class Reservation
     #[ORM\Column]
     #[Groups(['reservation:read', 'reservation:read:item'])]
     private ?int $id = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['reservation:read', 'reservation:read:item'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['reservation:read', 'reservation:read:item'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column]
     #[Groups(['reservation:read', 'reservation:read:item', 'reservation:write'])]
@@ -97,6 +111,28 @@ class Reservation
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getStartedAt(): ?\DateTime

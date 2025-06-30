@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\MessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -21,22 +22,27 @@ use Symfony\Component\Serializer\Annotation\Groups;
     denormalizationContext: ['groups' => ['message:write']],
     operations: [
         new GetCollection(
-            security: "is_granted('ROLE_ADMIN') or object.getSender() == user or object.getRecipient() == user"
+            security: "is_granted('ROLE_ADMIN')"
         ),
         new Get(
             security: "is_granted('ROLE_ADMIN') or object.getSender() == user or object.getRecipient() == user"
         ),
         new Post(
-            security: "is_granted('ROLE_USER') and object.getAnnouncement().getOwner() == user or object.getRecipient() == user"
+            securityPostDenormalize: "is_granted('ROLE_USER') and (object.getAnnouncement().getOwner() == user or object.getRecipient() == user)"
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN') or object.getSender() == user"
+        ),
+        new Patch(
+            denormalizationContext: ['groups' => ['message:write']],
+            security: "is_granted('ROLE_ADMIN') or object.getRecipient() == user"
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')"
         )
     ]
 )]
+
 #[ApiFilter(SearchFilter::class, properties: [
     'sender.id' => 'exact',
     'recipient.id' => 'exact',
@@ -64,6 +70,10 @@ class Message
     #[Groups(['message:read'])]
     private ?\DateTimeImmutable $readAt = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['message:read'])]
+    private ?\DateTimeImmutable $editedAt = null;
+
     #[ORM\Column(type: 'boolean')]
     #[Groups(['message:read', 'message:write'])]
     private bool $isRead = false;
@@ -83,10 +93,6 @@ class Message
     #[Groups(['message:read', 'message:write'])]
     private ?Announcement $announcement = null;
 
-    public function __construct()
-    {
-        $this->sentAt = new \DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
@@ -109,6 +115,12 @@ class Message
         return $this->sentAt;
     }
 
+    #[ORM\PrePersist]
+    public function setSentAt(): void
+    {
+        $this->sentAt = new \DateTimeImmutable();
+    }
+
     public function getReadAt(): ?\DateTimeImmutable
     {
         return $this->readAt;
@@ -118,6 +130,17 @@ class Message
     {
         $this->readAt = $readAt;
         return $this;
+    }
+
+    public function getEditedAt(): ?\DateTimeImmutable
+    {
+        return $this->editedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setEditedAt(): void
+    {
+        $this->editedAt = new \DateTimeImmutable();
     }
 
     public function isRead(): bool
