@@ -16,6 +16,7 @@ use App\Repository\ReviewRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
@@ -59,6 +60,11 @@ class Review
 
     #[ORM\Column(nullable: true)]
     #[Groups(['review:read', 'review:read:item', 'review:write'])]
+    #[Assert\Range(
+        notInRangeMessage: 'The note must be between {{ min }} and {{ max }}.',
+        min: 0,
+        max: 5
+    )]
     private ?float $note = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

@@ -16,6 +16,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
@@ -40,7 +41,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
     'title' => 'partial',
     'description' => 'partial',
     'id' => 'exact',
-    'announcementServices.announcement.id' => 'exact'
 ])]
 #[ORM\Entity(repositoryClass: ServiceRepository::class)]
 class Service
@@ -53,6 +53,8 @@ class Service
 
     #[ORM\Column(length: 255)]
     #[Groups(['service:read', 'service:read:item', 'service:write', 'announcement:read:item'])]
+    #[Assert\NotBlank(message: 'Title is required.')]
+    #[Assert\Length(max: 255, maxMessage: 'Title cannot be longer than {{ limit }} characters.')]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -74,6 +76,10 @@ class Service
     public function getId(): ?int
     {
         return $this->id;
+    }
+    public function __toString(): string
+    {
+        return $this->title ?? '';
     }
 
     public function getTitle(): ?string

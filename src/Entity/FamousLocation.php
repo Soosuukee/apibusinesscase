@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Repository\FamousLocationRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -37,6 +38,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiFilter(SearchFilter::class, properties: ['city' => 'partial', 'country' => 'partial', 'continent' => 'partial'])]
 #[ApiFilter(OrderFilter::class, properties: ['city', 'country', 'continent'], arguments: ['orderParameterName' => 'order'])]
 #[ORM\Entity(repositoryClass: FamousLocationRepository::class)]
+#[UniqueEntity(
+    fields: ['city', 'zipCode'],
+    message: 'A famous location with this city and zip code already exists.'
+)]
+
 class FamousLocation
 {
     #[ORM\Id]
@@ -64,7 +70,7 @@ class FamousLocation
         pattern: '/^[0-9A-Za-z -]+$/',
         message: 'Zip code format is invalid.'
     )]
-    private ?string $zipcode = null;
+    private ?string $zipCode = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['famous_location:read', 'famous_location:write'])]
@@ -111,14 +117,14 @@ class FamousLocation
         return $this;
     }
 
-    public function getZipcode(): ?string
+    public function getZipCode(): ?string
     {
-        return $this->zipcode;
+        return $this->zipCode;
     }
 
-    public function setZipcode(string $zipcode): static
+    public function setZipCode(string $zipCode): static
     {
-        $this->zipcode = $zipcode;
+        $this->zipCode = $zipCode;
         return $this;
     }
 

@@ -28,8 +28,8 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:write']],
     operations: [
-        new GetCollection(security: "is_granted('ROLE_ADMIN')"),
-        new Get(security: "is_granted('ROLE_ADMIN') or object == user"),
+        new GetCollection(security: "is_granted('ROLE_ADMIN')", normalizationContext: ['groups' => ['user:read', 'user:admin:read']]),
+        new Get(security: "is_granted('ROLE_ADMIN') or object == user", normalizationContext: ['groups' => ['user:read', 'user:admin:read']]),
         new Post(),
         new Put(security: "is_granted('ROLE_ADMIN') or object == user"),
         new Patch(security: "is_granted('ROLE_ADMIN') or object == user"),
@@ -66,7 +66,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:admin:read'])]
     private array $roles = ['ROLE_USER'];
 
     #[ORM\Column]
@@ -82,16 +82,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     )]
     private ?string $password = null;
 
+    #[Groups(['user:write'])]
+    #[Assert\NotBlank(message: 'Password is required.', groups: ['password_creation'])]
+    #[Assert\Length(min: 8, minMessage: 'Password must be at least {{ limit }} characters long.')]
+    #[Assert\Regex(
+        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/',
+        message: 'Password must contain uppercase, lowercase, digit, and special character.'
+    )]
+    private ?string $plainPassword = null;
+
     #[ORM\Column(length: 255)]
     #[Groups(['user:read', 'announcement:read', 'user:write', 'resident:read'])]
+    #[Assert\NotBlank(message: 'Firstname is required.')]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['user:read', 'announcement:read', 'user:write', 'resident:read'])]
+    #[Assert\NotBlank(message: 'Lastname is required.')]
     private ?string $lastName = null;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups(['user:read', 'user:write'])]
+    #[Assert\NotBlank(message: 'Birthdate is required.')]
+    #[Assert\LessThanOrEqual('today', message: 'Birthdate cannot be in the future.')]
+    #[Assert\LessThan('-18 years', message: 'You must be at least 18 years old.')]
     private ?\DateTimeInterface $birthdate = null;
 
     #[ORM\Column(length: 50)]
@@ -141,7 +155,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Resident>
      */
-    #[ORM\OneToMany(targetEntity: Resident::class, mappedBy: 'resident')]
+    #[ORM\OneToMany(targetEntity: Resident::class, mappedBy: 'user')]
     private Collection $residents;
 
     public function __construct()
@@ -205,6 +219,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): static
+    {
+        $this->plainPassword = $plainPassword;
+        return $this;
+    }
+
     public function getBirthdate(): ?\DateTimeInterface
     {
         return $this->birthdate;
@@ -240,7 +265,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
     public function eraseCredentials(): void
     {
-        // If you store any temporary, sensitive data on the user, clear it here
+        $this->plainPassword = null;
     }
 
     public function getFirstName(): ?string

@@ -21,7 +21,7 @@ use Doctrine\ORM\Mapping as ORM;
     operations: [
         new GetCollection(security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_OWNER')"),
         new Post(security: "is_granted('ROLE_USER')"),
-        new Delete(security: "is_granted('ROLE_ADMIN') or object.getResident() == user")
+        new Delete(security: "is_granted('ROLE_ADMIN') or object.getUser() == user")
     ]
 )]
 #[ApiFilter(SearchFilter::class, properties: [

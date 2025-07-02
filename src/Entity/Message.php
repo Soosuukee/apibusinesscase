@@ -16,6 +16,7 @@ use App\Repository\MessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     normalizationContext: ['groups' => ['message:read']],
@@ -50,6 +51,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 ])]
 #[ApiFilter(DateFilter::class, properties: ['sentAt'])]
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Message
 {
     #[ORM\Id]
@@ -60,6 +62,8 @@ class Message
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['message:read', 'message:write'])]
+    #[Assert\NotBlank(message: 'Message content cannot be empty.')]
+    #[Assert\Length(min: 1, max: 2000, maxMessage: 'Message too long.')]
     private ?string $content = null;
 
     #[ORM\Column]

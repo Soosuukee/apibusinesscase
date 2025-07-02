@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\Put;
 use App\Repository\UnavailableTimeSlotRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
@@ -51,14 +52,18 @@ class UnavailableTimeSlot
 
     #[ORM\Column(length: 255)]
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
+    #[Assert\NotBlank(message: 'Reason is required.')]
     private ?string $reason = null;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
+    #[Assert\NotNull(message: 'Start date is required.')]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups(['unavailable_time_slot:read', 'unavailable_time_slot:write'])]
+    #[Assert\NotNull(message: 'End date is required.')]
+    #[Assert\GreaterThan(propertyPath: 'startDate', message: 'End date must be after start date.')]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'unavailabilities')]
